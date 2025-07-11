@@ -1,5 +1,4 @@
-#include "ml307_board.h"
-
+#include "dual_network_board.h"
 #include "audio_codecs/box_audio_codec.h"
 #include "display/lcd_display.h"
 #include "application.h"
@@ -69,7 +68,7 @@ public:
     }
 };
 
-class LichuangDevBoard : public Ml307Board {
+class LichuangDevBoard : public DualNetworkBoard {
 private:
     i2c_master_bus_handle_t i2c_bus_;
     i2c_master_dev_handle_t pca9557_handle_;
@@ -112,20 +111,18 @@ private:
     void InitializeButtons() {
         boot_button_.OnClick([this]() {
             auto& app = Application::GetInstance();
-            if (app.GetDeviceState() == kDeviceStateStarting && !WifiStation::GetInstance().IsConnected()) {
-                // ResetWifiConfiguration();
+            if (GetNetworkType() == NetworkType::WIFI) {
+                if (app.GetDeviceState() == kDeviceStateStarting && !WifiStation::GetInstance().IsConnected()) {
+                    // cast to WifiBoard
+                    auto& wifi_board = static_cast<WifiBoard&>(GetCurrentBoard());
+                    wifi_board.ResetWifiConfiguration();
+                }
             }
             app.ToggleChatState();
         });
-
-#if CONFIG_USE_DEVICE_AEC
         boot_button_.OnDoubleClick([this]() {
-            auto& app = Application::GetInstance();
-            if (app.GetDeviceState() == kDeviceStateIdle) {
-                app.SetAecMode(app.GetAecMode() == kAecOff ? kAecOnDeviceSide : kAecOff);
-            }
+            SwitchNetworkType();
         });
-#endif
     }
 
     void InitializeSt7789Display() {
@@ -242,7 +239,9 @@ private:
     }
 
 public:
-    LichuangDevBoard() : Ml307Board(ML307_TX_PIN, ML307_RX_PIN, 4096), boot_button_(BOOT_BUTTON_GPIO) {
+    LichuangDevBoard() : DualNetworkBoard(ML307_TX_PIN, ML307_RX_PIN, 4096), 
+        boot_button_(BOOT_BUTTON_GPIO) {
+
         InitializeI2c();
         InitializeSpi();
         InitializeSt7789Display();
