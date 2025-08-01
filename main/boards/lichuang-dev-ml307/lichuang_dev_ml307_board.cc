@@ -1,11 +1,10 @@
 #include "dual_network_board.h"
-#include "audio_codecs/box_audio_codec.h"
+#include "codecs/box_audio_codec.h"
 #include "display/lcd_display.h"
 #include "application.h"
 #include "button.h"
 #include "config.h"
 #include "i2c_device.h"
-#include "iot/thing_manager.h"
 #include "esp32_camera.h"
 
 #include <esp_log.h>
@@ -18,7 +17,7 @@
 #include <lvgl.h>
 
 
-#define TAG "LichuangDevBoard"
+#define TAG "LichuangDevMl307Board"
 
 LV_FONT_DECLARE(font_puhui_20_4);
 LV_FONT_DECLARE(font_awesome_20_4);
@@ -239,9 +238,8 @@ private:
     }
 
 public:
-    LichuangDevBoard() : DualNetworkBoard(ML307_TX_PIN, ML307_RX_PIN, 4096), 
+    LichuangDevBoard() : DualNetworkBoard(ML307_TX_PIN, ML307_RX_PIN, GPIO_NUM_NC),
         boot_button_(BOOT_BUTTON_GPIO) {
-
         InitializeI2c();
         InitializeSpi();
         InitializeSt7789Display();
@@ -249,11 +247,6 @@ public:
         InitializeButtons();
         InitializeCamera();
 
-#if CONFIG_IOT_PROTOCOL_XIAOZHI
-        auto& thing_manager = iot::ThingManager::GetInstance();
-        thing_manager.AddThing(iot::CreateThing("Speaker"));
-        thing_manager.AddThing(iot::CreateThing("Screen"));
-#endif
         GetBacklight()->RestoreBrightness();
     }
 
